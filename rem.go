@@ -78,3 +78,24 @@ func (d *DB) Update(i interface{}) error {
 
 	return nil
 }
+
+func (d *DB) Find(i interface{}, term r.Term) error {
+	res, err := term.Run(d.sess)
+	if err != nil {
+		return err
+	}
+	if res.IsNil() {
+		return fmt.Errorf("Not found")
+	}
+
+	if reflect.TypeOf(i).Elem().Kind() == reflect.Slice {
+		err = res.All(i)
+	} else {
+		err = res.One(i)
+	}
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

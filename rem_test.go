@@ -107,3 +107,36 @@ func TestDB_Update(t *testing.T) {
 	assert.Equal(t, doc.Name, node.Name)
 	assert.Equal(t, doc.UpdatedAt.Second(), node.UpdatedAt.Second())
 }
+
+func TestDB_Find(t *testing.T) {
+	sess := session()
+	defer deleteAll(sess)
+	db := NewDB(sess)
+
+	node := &Node{Name: "test"}
+	db.Insert(node)
+
+	var n Node
+	err := db.Find(&n, r.Table("Node").Get(node.Id))
+
+	assert.NoError(t, err)
+	assert.Equal(t, node.Id, n.Id)
+}
+
+func TestDB_Find_Array(t *testing.T) {
+	sess := session()
+	defer deleteAll(sess)
+	db := NewDB(sess)
+
+	node1 := &Node{Name: "a"}
+	node2 := &Node{Name: "b"}
+	db.Insert(node1)
+	db.Insert(node2)
+
+	var ns []Node
+	err := db.Find(&ns, r.Table("Node").OrderBy("name"))
+
+	assert.NoError(t, err)
+	assert.Equal(t, node1.Id, ns[0].Id)
+	assert.Equal(t, node2.Id, ns[1].Id)
+}
