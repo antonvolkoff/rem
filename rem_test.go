@@ -60,3 +60,12 @@ func TestDB_Insert_NonPointer(t *testing.T) {
 	assert.Equal(t, time.Time{}, node.CreatedAt)
 	assert.Equal(t, time.Time{}, node.UpdatedAt)
 }
+
+func TestDB_IsNew(t *testing.T) {
+	db := NewDB(nil)
+	node1 := &Node{Name: "test"}
+	node2 := &Node{Id: "ID", Name: "test"}
+
+	assert.True(t, db.IsNew(node1))
+	assert.False(t, db.IsNew(node2))
+}

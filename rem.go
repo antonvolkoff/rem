@@ -36,3 +36,14 @@ func (d *DB) Insert(i interface{}) error {
 
 	return nil
 }
+
+func (d *DB) IsNew(i interface{}) bool {
+	s := reflect.ValueOf(i).Elem()
+	id := s.FieldByName("Id").String()
+
+	if id != "" {
+		return false
+	}
+
+	return true
+}
