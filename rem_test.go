@@ -1,28 +1,45 @@
 package rem
 
 import (
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"testing"
 
 	r "github.com/dancannon/gorethink"
 	"time"
 )
 
-func session() *r.Session {
-	sess, _ := r.Connect(r.ConnectOpts{
+type DBSuite struct {
+	suite.Suite
+
+	sess *r.Session
+	db   *DB
+}
+
+func (suite *DBSuite) SetupSuite() {
+	suite.sess, _ = r.Connect(r.ConnectOpts{
 		Address:  "localhost:28015",
 		Database: "rem_test",
 	})
 
-	r.DbCreate("rem_test").Run(sess)
-	r.Db("rem_test").TableCreate("Node").Run(sess)
+	r.DbCreate("rem_test").Run(suite.sess)
+	r.Db("rem_test").TableCreate("Node").Run(suite.sess)
 
-	return sess
+	suite.db = NewDB(suite.sess)
 }
 
-func deleteAll(sess *r.Session) {
-	r.DbDrop("rem_test").Run(sess)
+func (suite *DBSuite) TearDownSuite() {
+	r.DbDrop("rem_test").Run(suite.sess)
 }
+
+func (suite *DBSuite) TearDownTest() {
+	r.Table("Node").Delete().RunWrite(suite.sess)
+}
+
+func TestDBSuite(t *testing.T) {
+	suite.Run(t, new(DBSuite))
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 type Node struct {
 	Id        string    `gorethink:"id,omitempty"`
@@ -31,79 +48,87 @@ type Node struct {
 	UpdatedAt time.Time `gorething:"updated_at"`
 }
 
-func TestDB_Insert(t *testing.T) {
-	sess := session()
-	defer deleteAll(sess)
-
+func (suite *DBSuite) TestInsert() {
 	node := Node{Name: "test"}
-	db := NewDB(sess)
 
-	err := db.Insert(&node)
+	err := suite.db.Insert(&node)
 
-	assert.NoError(t, err)
-	assert.NotEmpty(t, node.Id)
-	assert.NotEqual(t, time.Time{}, node.CreatedAt)
-	assert.NotEqual(t, time.Time{}, node.UpdatedAt)
+	suite.NoError(err)
+	suite.NotEmpty(node.Id)
+	suite.NotEqual(time.Time{}, node.CreatedAt)
+	suite.NotEqual(time.Time{}, node.UpdatedAt)
 
 	var doc Node
-	res, _ := r.Table("Node").Get(node.Id).Run(sess)
+	res, _ := r.Table("Node").Get(node.Id).Run(suite.sess)
 	res.One(&doc)
-	assert.Equal(t, doc.Name, node.Name)
-	assert.Equal(t, doc.CreatedAt.Second(), node.CreatedAt.Second())
-	assert.Equal(t, doc.UpdatedAt.Second(), node.UpdatedAt.Second())
+	suite.Equal(doc.Name, node.Name)
+	suite.Equal(doc.CreatedAt.Second(), node.CreatedAt.Second())
+	suite.Equal(doc.UpdatedAt.Second(), node.UpdatedAt.Second())
 }
 
-func TestDB_Insert_NonPointer(t *testing.T) {
-	sess := session()
-	defer deleteAll(sess)
-
+func (suite *DBSuite) TestInsert_NonPointer() {
 	node := Node{Name: "test"}
-	db := NewDB(sess)
+	err := suite.db.Insert(node)
 
-	err := db.Insert(node)
-
-	assert.Error(t, err)
-	assert.Empty(t, node.Id)
-	assert.Equal(t, time.Time{}, node.CreatedAt)
-	assert.Equal(t, time.Time{}, node.UpdatedAt)
+	suite.Error(err)
+	suite.Empty(node.Id)
+	suite.Equal(time.Time{}, node.CreatedAt)
+	suite.Equal(time.Time{}, node.UpdatedAt)
 }
 
-func TestDB_Insert_Existing(t *testing.T) {
-	db := NewDB(nil)
+func (suite *DBSuite) TestInsert_Existing() {
 	node := &Node{Id: "ID", Name: "node"}
-
-	err := db.Insert(node)
-
-	assert.Error(t, err)
+	err := suite.db.Insert(node)
+	suite.Error(err)
 }
 
-func TestDB_IsNew(t *testing.T) {
-	db := NewDB(nil)
+func (suite *DBSuite) TestIsNew() {
 	node1 := &Node{Name: "test"}
 	node2 := &Node{Id: "ID", Name: "test"}
 
-	assert.True(t, db.IsNew(node1))
-	assert.False(t, db.IsNew(node2))
+	suite.True(suite.db.IsNew(node1))
+	suite.False(suite.db.IsNew(node2))
 }
 
-func TestDB_Update(t *testing.T) {
-	sess := session()
-	defer deleteAll(sess)
-	db := NewDB(sess)
-
+func (suite *DBSuite) TestUpdate() {
 	node := &Node{Name: "test"}
-	db.Insert(node)
+	suite.db.Insert(node)
 
 	node.Name = "root"
 	updatedAt := node.UpdatedAt
-	err := db.Update(node)
+	err := suite.db.Update(node)
 
-	assert.NoError(t, err)
-	assert.NotEqual(t, updatedAt, node.UpdatedAt)
+	suite.NoError(err)
+	suite.NotEqual(updatedAt, node.UpdatedAt)
 
 	var doc Node
-	res, _ := r.Table("Node").Get(node.Id).Run(sess)
+	res, _ := r.Table("Node").Get(node.Id).Run(suite.sess)
 	res.One(&doc)
-	assert.Equal(t, doc.Name, node.Name)
-	assert.Equal(t, doc.UpdatedAt.Second(), node.UpdatedAt.Second())
+	suite.Equal(doc.Name, node.Name)
+	suite.Equal(doc.UpdatedAt.Second(), node.UpdatedAt.Second())
+}
+
+func (suite *DBSuite) TestFind() {
+	node := &Node{Name: "test"}
+	suite.db.Insert(node)
+
+	var n Node
+	err := suite.db.Find(&n, r.Table("Node").Get(node.Id))
+
+	suite.NoError(err)
+	suite.Equal(node.Id, n.Id)
+}
+
+func (suite *DBSuite) TestFind_Array() {
+	node1 := &Node{Name: "a"}
+	node2 := &Node{Name: "b"}
+	suite.db.Insert(node1)
+	suite.db.Insert(node2)
+
+	var ns []Node
+	err := suite.db.Find(&ns, r.Table("Node").OrderBy("name"))
+
+	suite.NoError(err)
+	suite.Equal(node1.Id, ns[0].Id)
+	suite.Equal(node2.Id, ns[1].Id)
 }
