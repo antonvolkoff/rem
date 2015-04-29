@@ -22,8 +22,11 @@ func (d *DB) Insert(i interface{}) error {
 		return fmt.Errorf("Passed attribute should be a pointer")
 	}
 
-	tableName := t.Elem().Name()
+	if !d.IsNew(i) {
+		return fmt.Errorf("Given document is not new")
+	}
 
+	tableName := t.Elem().Name()
 	res, err := r.Table(tableName).Insert(i).RunWrite(d.sess)
 	if err != nil {
 		return err
