@@ -44,6 +44,13 @@ func TestDB_Insert(t *testing.T) {
 	assert.NotEmpty(t, node.Id)
 	assert.NotEqual(t, time.Time{}, node.CreatedAt)
 	assert.NotEqual(t, time.Time{}, node.UpdatedAt)
+
+	var doc Node
+	res, _ := r.Table("Node").Get(node.Id).Run(sess)
+	res.One(&doc)
+	assert.Equal(t, doc.Name, node.Name)
+	assert.Equal(t, doc.CreatedAt.Second(), node.CreatedAt.Second())
+	assert.Equal(t, doc.UpdatedAt.Second(), node.UpdatedAt.Second())
 }
 
 func TestDB_Insert_NonPointer(t *testing.T) {
@@ -77,4 +84,26 @@ func TestDB_IsNew(t *testing.T) {
 
 	assert.True(t, db.IsNew(node1))
 	assert.False(t, db.IsNew(node2))
+}
+
+func TestDB_Update(t *testing.T) {
+	sess := session()
+	defer deleteAll(sess)
+	db := NewDB(sess)
+
+	node := &Node{Name: "test"}
+	db.Insert(node)
+
+	node.Name = "root"
+	updatedAt := node.UpdatedAt
+	err := db.Update(node)
+
+	assert.NoError(t, err)
+	assert.NotEqual(t, updatedAt, node.UpdatedAt)
+
+	var doc Node
+	res, _ := r.Table("Node").Get(node.Id).Run(sess)
+	res.One(&doc)
+	assert.Equal(t, doc.Name, node.Name)
+	assert.Equal(t, doc.UpdatedAt.Second(), node.UpdatedAt.Second())
 }
