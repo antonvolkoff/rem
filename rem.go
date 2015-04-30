@@ -11,11 +11,12 @@ import (
 )
 
 type DB struct {
-	sess *r.Session
+	sess   *r.Session
+	dbName string
 }
 
-func NewDB(sess *r.Session) *DB {
-	return &DB{sess}
+func NewDB(sess *r.Session, dbName string) *DB {
+	return &DB{sess, dbName}
 }
 
 func (d *DB) Insert(i interface{}) error {
@@ -33,7 +34,7 @@ func (d *DB) Insert(i interface{}) error {
 	s.FieldByName("UpdatedAt").Set(reflect.ValueOf(time.Now()))
 
 	table := d.convertToTableName(t.Elem().Name())
-	res, err := r.Table(table).Insert(i).RunWrite(d.sess)
+	res, err := r.Db(d.dbName).Table(table).Insert(i).RunWrite(d.sess)
 	if err != nil {
 		return err
 	}
@@ -69,7 +70,7 @@ func (d *DB) Update(i interface{}) error {
 	s.FieldByName("UpdatedAt").Set(reflect.ValueOf(time.Now()))
 
 	table := d.convertToTableName(t.Elem().Name())
-	res, err := r.Table(table).Get(id).Update(i).RunWrite(d.sess)
+	res, err := r.Db(d.dbName).Table(table).Get(id).Update(i).RunWrite(d.sess)
 	if err != nil {
 		return err
 	}
@@ -116,13 +117,51 @@ func (d *DB) Delete(i interface{}) error {
 	id := s.FieldByName("Id").String()
 	table := d.convertToTableName(t.Elem().Name())
 
-	res, err := r.Table(table).Get(id).Delete().RunWrite(d.sess)
+	res, err := r.Db(d.dbName).Table(table).Get(id).Delete().RunWrite(d.sess)
 	if err != nil {
 		return err
 	}
 
 	if res.Errors != 0 {
 		return fmt.Errorf("Document was not updated")
+	}
+
+	return nil
+}
+
+func (d *DB) CreateTable(i interface{}) error {
+	var table string
+
+	t := reflect.TypeOf(i)
+	if t.Kind() != reflect.Ptr {
+		table = t.Name()
+	} else {
+		table = t.Elem().Name()
+	}
+	table = d.convertToTableName(table)
+
+	_, err := r.Db(d.dbName).TableCreate(table).RunWrite(d.sess)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *DB) DropTable(i interface{}) error {
+	var table string
+
+	t := reflect.TypeOf(i)
+	if t.Kind() != reflect.Ptr {
+		table = t.Name()
+	} else {
+		table = t.Elem().Name()
+	}
+	table = d.convertToTableName(table)
+
+	_, err := r.Db(d.dbName).TableDrop(table).RunWrite(d.sess)
+	if err != nil {
+		return err
 	}
 
 	return nil
