@@ -22,7 +22,7 @@ func (suite *DBSuite) SetupSuite() {
 	})
 
 	r.DbCreate("rem_test").Run(suite.sess)
-	r.Db("rem_test").TableCreate("Node").Run(suite.sess)
+	r.Db("rem_test").TableCreate("nodes").Run(suite.sess)
 
 	suite.db = NewDB(suite.sess)
 }
@@ -32,7 +32,7 @@ func (suite *DBSuite) TearDownSuite() {
 }
 
 func (suite *DBSuite) TearDownTest() {
-	r.Table("Node").Delete().RunWrite(suite.sess)
+	r.Table("nodes").Delete().RunWrite(suite.sess)
 }
 
 func TestDBSuite(t *testing.T) {
@@ -59,7 +59,7 @@ func (suite *DBSuite) TestInsert() {
 	suite.NotEqual(time.Time{}, node.UpdatedAt)
 
 	var doc Node
-	res, _ := r.Table("Node").Get(node.Id).Run(suite.sess)
+	res, _ := r.Table("nodes").Get(node.Id).Run(suite.sess)
 	res.One(&doc)
 	suite.Equal(doc.Name, node.Name)
 	suite.Equal(doc.CreatedAt.Second(), node.CreatedAt.Second())
@@ -102,7 +102,7 @@ func (suite *DBSuite) TestUpdate() {
 	suite.NotEqual(updatedAt, node.UpdatedAt)
 
 	var doc Node
-	res, _ := r.Table("Node").Get(node.Id).Run(suite.sess)
+	res, _ := r.Table("nodes").Get(node.Id).Run(suite.sess)
 	res.One(&doc)
 	suite.Equal(doc.Name, node.Name)
 	suite.Equal(doc.UpdatedAt.Second(), node.UpdatedAt.Second())
@@ -113,7 +113,7 @@ func (suite *DBSuite) TestFind() {
 	suite.db.Insert(node)
 
 	var n Node
-	err := suite.db.Find(&n, r.Table("Node").Get(node.Id))
+	err := suite.db.Find(&n, r.Table("nodes").Get(node.Id))
 
 	suite.NoError(err)
 	suite.Equal(node.Id, n.Id)
@@ -126,7 +126,7 @@ func (suite *DBSuite) TestFind_Array() {
 	suite.db.Insert(node2)
 
 	var ns []Node
-	err := suite.db.Find(&ns, r.Table("Node").OrderBy("name"))
+	err := suite.db.Find(&ns, r.Table("nodes").OrderBy("name"))
 
 	suite.NoError(err)
 	suite.Equal(node1.Id, ns[0].Id)
