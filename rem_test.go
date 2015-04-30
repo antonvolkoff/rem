@@ -191,3 +191,13 @@ func (suite *DBSuite) TestDropTabale() {
 	res.All(&tables)
 	suite.NotContains(tables, "users")
 }
+
+func (suite *DBSuite) TestAddIndex() {
+	err := suite.db.IndexCreate(Node{}, "name")
+
+	suite.NoError(err)
+	var idxs []string
+	res, _ := r.Db("rem_test").Table("nodes").IndexList().Run(suite.sess)
+	res.All(&idxs)
+	suite.Contains(idxs, "name")
+}
