@@ -186,6 +186,25 @@ func (d *DB) IndexCreate(i interface{}, name string) error {
 	return nil
 }
 
+func (d *DB) IndexDrop(i interface{}, name string) error {
+	var table string
+
+	t := reflect.TypeOf(i)
+	if t.Kind() != reflect.Ptr {
+		table = t.Name()
+	} else {
+		table = t.Elem().Name()
+	}
+	table = d.convertToTableName(table)
+
+	_, err := r.Db(d.dbName).Table(table).IndexDrop(name).Run(d.sess)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (d *DB) convertToTableName(name string) string {
 	table := strings.ToLower(name)
 	table = inflector.Pluralize(table)

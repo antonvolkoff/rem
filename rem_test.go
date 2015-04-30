@@ -192,7 +192,7 @@ func (suite *DBSuite) TestDropTabale() {
 	suite.NotContains(tables, "users")
 }
 
-func (suite *DBSuite) TestAddIndex() {
+func (suite *DBSuite) TestIndexCreate() {
 	err := suite.db.IndexCreate(Node{}, "name")
 
 	suite.NoError(err)
@@ -200,4 +200,16 @@ func (suite *DBSuite) TestAddIndex() {
 	res, _ := r.Db("rem_test").Table("nodes").IndexList().Run(suite.sess)
 	res.All(&idxs)
 	suite.Contains(idxs, "name")
+}
+
+func (suite *DBSuite) TestIndexDrop() {
+	suite.db.IndexCreate(Node{}, "name")
+
+	err := suite.db.IndexDrop(Node{}, "name")
+
+	suite.NoError(err)
+	var idxs []string
+	res, _ := r.Db("rem_test").Table("nodes").IndexList().Run(suite.sess)
+	res.All(&idxs)
+	suite.NotContains(idxs, "name")
 }
