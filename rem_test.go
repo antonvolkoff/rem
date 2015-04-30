@@ -132,3 +132,31 @@ func (suite *DBSuite) TestFind_Array() {
 	suite.Equal(node1.Id, ns[0].Id)
 	suite.Equal(node2.Id, ns[1].Id)
 }
+
+func (suite *DBSuite) TestDelete() {
+	node := &Node{Name: "root"}
+	suite.db.Insert(node)
+
+	err := suite.db.Delete(node)
+
+	suite.NoError(err)
+	res, _ := r.Table("nodes").Get(node.Id).Run(suite.sess)
+	suite.True(res.IsNil())
+}
+
+func (suite *DBSuite) TestDelete_NonPtr() {
+	node := Node{Name: "root"}
+	suite.db.Insert(&node)
+
+	err := suite.db.Delete(node)
+
+	suite.Error(err)
+}
+
+func (suite *DBSuite) TestDelete_New() {
+	node := &Node{Name: "root"}
+
+	err := suite.db.Delete(node)
+
+	suite.Error(err)
+}
