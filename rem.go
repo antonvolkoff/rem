@@ -1,11 +1,13 @@
 package rem
 
 import (
-	r "github.com/dancannon/gorethink"
+	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
-	"fmt"
+	r "github.com/dancannon/gorethink"
+	"github.com/gedex/inflector"
 )
 
 type DB struct {
@@ -30,7 +32,7 @@ func (d *DB) Insert(i interface{}) error {
 	s.FieldByName("CreatedAt").Set(reflect.ValueOf(time.Now()))
 	s.FieldByName("UpdatedAt").Set(reflect.ValueOf(time.Now()))
 
-	table := t.Elem().Name()
+	table := d.convertToTableName(t.Elem().Name())
 	res, err := r.Table(table).Insert(i).RunWrite(d.sess)
 	if err != nil {
 		return err
@@ -66,7 +68,7 @@ func (d *DB) Update(i interface{}) error {
 	id := s.FieldByName("Id").String()
 	s.FieldByName("UpdatedAt").Set(reflect.ValueOf(time.Now()))
 
-	table := t.Elem().Name()
+	table := d.convertToTableName(t.Elem().Name())
 	res, err := r.Table(table).Get(id).Update(i).RunWrite(d.sess)
 	if err != nil {
 		return err
@@ -98,4 +100,10 @@ func (d *DB) Find(i interface{}, term r.Term) error {
 	}
 
 	return nil
+}
+
+func (d *DB) convertToTableName(name string) string {
+	table := strings.ToLower(name)
+	table = inflector.Pluralize(table)
+	return table
 }
