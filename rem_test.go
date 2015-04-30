@@ -17,8 +17,8 @@ type DBSuite struct {
 
 func (suite *DBSuite) SetupSuite() {
 	suite.sess, _ = r.Connect(r.ConnectOpts{
-		Address:  "localhost:28015",
-		Database: "rem_test",
+		Address: "localhost:28015",
+		// Database: "rem_test",
 	})
 
 	r.DbCreate("rem_test").Run(suite.sess)
@@ -59,7 +59,7 @@ func (suite *DBSuite) TestInsert() {
 	suite.NotEqual(time.Time{}, node.UpdatedAt)
 
 	var doc Node
-	res, _ := r.Table("nodes").Get(node.Id).Run(suite.sess)
+	res, _ := r.Db("rem_test").Table("nodes").Get(node.Id).Run(suite.sess)
 	res.One(&doc)
 	suite.Equal(doc.Name, node.Name)
 	suite.Equal(doc.CreatedAt.Second(), node.CreatedAt.Second())
@@ -102,7 +102,7 @@ func (suite *DBSuite) TestUpdate() {
 	suite.NotEqual(updatedAt, node.UpdatedAt)
 
 	var doc Node
-	res, _ := r.Table("nodes").Get(node.Id).Run(suite.sess)
+	res, _ := r.Db("rem_test").Table("nodes").Get(node.Id).Run(suite.sess)
 	res.One(&doc)
 	suite.Equal(doc.Name, node.Name)
 	suite.Equal(doc.UpdatedAt.Second(), node.UpdatedAt.Second())
@@ -113,7 +113,7 @@ func (suite *DBSuite) TestFind() {
 	suite.db.Insert(node)
 
 	var n Node
-	err := suite.db.Find(&n, r.Table("nodes").Get(node.Id))
+	err := suite.db.Find(&n, r.Db("rem_test").Table("nodes").Get(node.Id))
 
 	suite.NoError(err)
 	suite.Equal(node.Id, n.Id)
@@ -126,11 +126,15 @@ func (suite *DBSuite) TestFind_Array() {
 	suite.db.Insert(node2)
 
 	var ns []Node
-	err := suite.db.Find(&ns, r.Table("nodes").OrderBy("name"))
+	err := suite.db.Find(&ns, r.Db("rem_test").Table("nodes").OrderBy("name"))
 
 	suite.NoError(err)
-	suite.Equal(node1.Id, ns[0].Id)
-	suite.Equal(node2.Id, ns[1].Id)
+	var ids []string
+	for _, n := range ns {
+		ids = append(ids, n.Id)
+	}
+	suite.Contains(ids, node1.Id)
+	suite.Contains(ids, node2.Id)
 }
 
 func (suite *DBSuite) TestDelete() {
@@ -140,7 +144,7 @@ func (suite *DBSuite) TestDelete() {
 	err := suite.db.Delete(node)
 
 	suite.NoError(err)
-	res, _ := r.Table("nodes").Get(node.Id).Run(suite.sess)
+	res, _ := r.Db("rem_test").Table("nodes").Get(node.Id).Run(suite.sess)
 	suite.True(res.IsNil())
 }
 

@@ -34,7 +34,7 @@ func (d *DB) Insert(i interface{}) error {
 	s.FieldByName("UpdatedAt").Set(reflect.ValueOf(time.Now()))
 
 	table := d.convertToTableName(t.Elem().Name())
-	res, err := r.Table(table).Insert(i).RunWrite(d.sess)
+	res, err := r.Db(d.dbName).Table(table).Insert(i).RunWrite(d.sess)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (d *DB) Update(i interface{}) error {
 	s.FieldByName("UpdatedAt").Set(reflect.ValueOf(time.Now()))
 
 	table := d.convertToTableName(t.Elem().Name())
-	res, err := r.Table(table).Get(id).Update(i).RunWrite(d.sess)
+	res, err := r.Db(d.dbName).Table(table).Get(id).Update(i).RunWrite(d.sess)
 	if err != nil {
 		return err
 	}
@@ -117,7 +117,7 @@ func (d *DB) Delete(i interface{}) error {
 	id := s.FieldByName("Id").String()
 	table := d.convertToTableName(t.Elem().Name())
 
-	res, err := r.Table(table).Get(id).Delete().RunWrite(d.sess)
+	res, err := r.Db(d.dbName).Table(table).Get(id).Delete().RunWrite(d.sess)
 	if err != nil {
 		return err
 	}
