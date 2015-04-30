@@ -174,3 +174,16 @@ func (suite *DBSuite) TestCreateTable() {
 
 	r.Db("rem_test").TableDrop("users").RunWrite(suite.sess)
 }
+
+func (suite *DBSuite) TestDropTabale() {
+	type User struct{}
+	suite.db.CreateTable(User{})
+
+	err := suite.db.DropTable(User{})
+
+	suite.NoError(err)
+	var tables []string
+	res, _ := r.Db("rem_test").TableList().Run(suite.sess)
+	res.All(&tables)
+	suite.NotContains(tables, "users")
+}

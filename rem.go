@@ -148,6 +148,25 @@ func (d *DB) CreateTable(i interface{}) error {
 	return nil
 }
 
+func (d *DB) DropTable(i interface{}) error {
+	var table string
+
+	t := reflect.TypeOf(i)
+	if t.Kind() != reflect.Ptr {
+		table = t.Name()
+	} else {
+		table = t.Elem().Name()
+	}
+	table = d.convertToTableName(table)
+
+	_, err := r.Db(d.dbName).TableDrop(table).RunWrite(d.sess)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (d *DB) convertToTableName(name string) string {
 	table := strings.ToLower(name)
 	table = inflector.Pluralize(table)
