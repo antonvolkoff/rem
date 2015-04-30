@@ -162,15 +162,15 @@ func (suite *DBSuite) TestDelete_New() {
 }
 
 func (suite *DBSuite) TestCreateTable() {
-	// type User struct{}
+	type User struct{}
 
-	// err := suite.db.CreateTable(User{})
+	err := suite.db.CreateTable(User{})
 
-	// suite.NoError(err)
-	// var tables []string
-	// res, _ := r.Db("rem_test").TableList().Run(suite.sess)
-	// res.All(&tables)
-	// suite.Equal("users", tables[1])
+	suite.NoError(err)
+	var tables []string
+	res, _ := r.Db("rem_test").TableList().Run(suite.sess)
+	res.All(&tables)
+	suite.Contains(tables, "users")
 
-	// r.Db("rem_test").TableDrop("users").RunWrite(suite.sess)
+	r.Db("rem_test").TableDrop("users").RunWrite(suite.sess)
 }

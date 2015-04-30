@@ -130,19 +130,20 @@ func (d *DB) Delete(i interface{}) error {
 }
 
 func (d *DB) CreateTable(i interface{}) error {
-	// var table string
+	var table string
 
-	// t := reflect.TypeOf(i)
-	// if t.Kind() != reflect.Ptr {
-	// 	table = t.Name()
-	// } else {
-	// 	table = t.Elem().Name()
-	// }
+	t := reflect.TypeOf(i)
+	if t.Kind() != reflect.Ptr {
+		table = t.Name()
+	} else {
+		table = t.Elem().Name()
+	}
+	table = d.convertToTableName(table)
 
-	// res, err := r.TableCreate(table).RunWrite(d.sess)
-	// if err != nil {
-	// 	return err
-	// }
+	_, err := r.Db(d.dbName).TableCreate(table).RunWrite(d.sess)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
