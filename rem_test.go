@@ -24,7 +24,7 @@ func (suite *DBSuite) SetupSuite() {
 	r.DbCreate("rem_test").Run(suite.sess)
 	r.Db("rem_test").TableCreate("nodes").Run(suite.sess)
 
-	suite.db = NewDB(suite.sess)
+	suite.db = NewDB(suite.sess, "rem_test")
 }
 
 func (suite *DBSuite) TearDownSuite() {
@@ -159,4 +159,18 @@ func (suite *DBSuite) TestDelete_New() {
 	err := suite.db.Delete(node)
 
 	suite.Error(err)
+}
+
+func (suite *DBSuite) TestCreateTable() {
+	// type User struct{}
+
+	// err := suite.db.CreateTable(User{})
+
+	// suite.NoError(err)
+	// var tables []string
+	// res, _ := r.Db("rem_test").TableList().Run(suite.sess)
+	// res.All(&tables)
+	// suite.Equal("users", tables[1])
+
+	// r.Db("rem_test").TableDrop("users").RunWrite(suite.sess)
 }

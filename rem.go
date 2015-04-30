@@ -11,11 +11,12 @@ import (
 )
 
 type DB struct {
-	sess *r.Session
+	sess   *r.Session
+	dbName string
 }
 
-func NewDB(sess *r.Session) *DB {
-	return &DB{sess}
+func NewDB(sess *r.Session, dbName string) *DB {
+	return &DB{sess, dbName}
 }
 
 func (d *DB) Insert(i interface{}) error {
@@ -124,6 +125,24 @@ func (d *DB) Delete(i interface{}) error {
 	if res.Errors != 0 {
 		return fmt.Errorf("Document was not updated")
 	}
+
+	return nil
+}
+
+func (d *DB) CreateTable(i interface{}) error {
+	// var table string
+
+	// t := reflect.TypeOf(i)
+	// if t.Kind() != reflect.Ptr {
+	// 	table = t.Name()
+	// } else {
+	// 	table = t.Elem().Name()
+	// }
+
+	// res, err := r.TableCreate(table).RunWrite(d.sess)
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
