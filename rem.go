@@ -102,6 +102,32 @@ func (d *DB) Find(i interface{}, term r.Term) error {
 	return nil
 }
 
+func (d *DB) Delete(i interface{}) error {
+	t := reflect.TypeOf(i)
+	if t.Kind() != reflect.Ptr {
+		return fmt.Errorf("Passed attribute should be a pointer")
+	}
+
+	if d.IsNew(i) {
+		return fmt.Errorf("Given document is new and can not be deleted")
+	}
+
+	s := reflect.ValueOf(i).Elem()
+	id := s.FieldByName("Id").String()
+	table := d.convertToTableName(t.Elem().Name())
+
+	res, err := r.Table(table).Get(id).Delete().RunWrite(d.sess)
+	if err != nil {
+		return err
+	}
+
+	if res.Errors != 0 {
+		return fmt.Errorf("Document was not updated")
+	}
+
+	return nil
+}
+
 func (d *DB) convertToTableName(name string) string {
 	table := strings.ToLower(name)
 	table = inflector.Pluralize(table)

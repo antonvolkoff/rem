@@ -8,7 +8,7 @@ RethinkDB ORM-like library for Go
 - [x] Update operations
 - [x] Find operations
 - [x] Table name generations, ex. User -> users
-- [ ] Delete operations
+- [x] Delete operations
 - [ ] Table operations
 - [ ] Index operations
 - [ ] Callbacks
