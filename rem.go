@@ -148,7 +148,7 @@ func (d *DB) Delete(i interface{}) error {
 	}
 
 	if res.Errors != 0 {
-		return fmt.Errorf("Document was not updated")
+		return fmt.Errorf("Document was not deleted")
 	}
 	ad.Call(in)
 
