@@ -41,11 +41,50 @@ func TestDBSuite(t *testing.T) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+var (
+	beforeCreateCalled = false
+	afterCreateCalled  = false
+	beforeUpdateCalled = false
+	afterUpdateCalled  = false
+	beforeDeleteCalled = false
+	afterDeleteCalled  = false
+)
+
 type Node struct {
 	Id        string    `gorethink:"id,omitempty"`
 	Name      string    `gorethink:"name"`
 	CreatedAt time.Time `gorething:"created_at"`
 	UpdatedAt time.Time `gorething:"updated_at"`
+}
+
+func (n *Node) BeforeCreate(db *DB) error {
+	beforeCreateCalled = true
+	return nil
+}
+
+func (n *Node) AfterCreate(db *DB) error {
+	afterCreateCalled = true
+	return nil
+}
+
+func (n *Node) BeforeUpdate(db *DB) error {
+	beforeUpdateCalled = true
+	return nil
+}
+
+func (n *Node) AfterUpdate(db *DB) error {
+	afterUpdateCalled = true
+	return nil
+}
+
+func (n *Node) BeforeDelete(db *DB) error {
+	beforeDeleteCalled = true
+	return nil
+}
+
+func (n *Node) AfterDelete(db *DB) error {
+	afterDeleteCalled = true
+	return nil
 }
 
 func (suite *DBSuite) TestInsert() {
@@ -64,6 +103,7 @@ func (suite *DBSuite) TestInsert() {
 	suite.Equal(doc.Name, node.Name)
 	suite.Equal(doc.CreatedAt.Second(), node.CreatedAt.Second())
 	suite.Equal(doc.UpdatedAt.Second(), node.UpdatedAt.Second())
+	suite.Equal(doc.CreatedAt, doc.UpdatedAt)
 }
 
 func (suite *DBSuite) TestInsert_NonPointer() {
@@ -212,4 +252,28 @@ func (suite *DBSuite) TestIndexDrop() {
 	res, _ := r.Db("rem_test").Table("nodes").IndexList().Run(suite.sess)
 	res.All(&idxs)
 	suite.NotContains(idxs, "name")
+}
+
+func (suite *DBSuite) TestCallbacks() {
+	beforeCreateCalled = false
+	afterCreateCalled = false
+	beforeUpdateCalled = false
+	afterUpdateCalled = false
+	beforeDeleteCalled = false
+	afterDeleteCalled = false
+
+	node := &Node{Name: "root"}
+
+	suite.db.Insert(node)
+	suite.True(beforeCreateCalled)
+	suite.True(afterCreateCalled)
+
+	node.Name = "root2"
+	suite.db.Update(node)
+	suite.True(beforeUpdateCalled)
+	suite.True(afterUpdateCalled)
+
+	suite.db.Delete(node)
+	suite.True(beforeDeleteCalled)
+	suite.True(afterDeleteCalled)
 }
