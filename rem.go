@@ -76,11 +76,20 @@ func (d *DB) Update(i interface{}) error {
 		return fmt.Errorf("Given document is new and can not be updated")
 	}
 
-	s := reflect.ValueOf(i).Elem()
+	sp := reflect.ValueOf(i)
+	s := sp.Elem()
 	id := s.FieldByName("Id").String()
 	s.FieldByName("UpdatedAt").Set(reflect.ValueOf(time.Now()))
 
+	bu := sp.MethodByName("BeforeUpdate")
+	au := sp.MethodByName("AfterUpdate")
+
 	table := d.convertToTableName(t.Elem().Name())
+
+	in := make([]reflect.Value, 1)
+	in[0] = reflect.ValueOf(d)
+	bu.Call(in)
+
 	res, err := r.Db(d.dbName).Table(table).Get(id).Update(i).RunWrite(d.sess)
 	if err != nil {
 		return err
@@ -89,6 +98,8 @@ func (d *DB) Update(i interface{}) error {
 	if res.Errors != 0 {
 		return fmt.Errorf("Document was not updated")
 	}
+
+	au.Call(in)
 
 	return nil
 }
