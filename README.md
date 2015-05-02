@@ -11,5 +11,5 @@ RethinkDB ORM-like library for Go
 - [x] Delete operations
 - [x] Table operations
 - [x] Index operations
-- [ ] Callbacks
+- [x] Callbacks
 - [ ] Documentation
