@@ -29,17 +29,28 @@ func (d *DB) Insert(i interface{}) error {
 		return fmt.Errorf("Given document is not new")
 	}
 
-	s := reflect.ValueOf(i).Elem()
-	s.FieldByName("CreatedAt").Set(reflect.ValueOf(time.Now()))
-	s.FieldByName("UpdatedAt").Set(reflect.ValueOf(time.Now()))
+	sp := reflect.ValueOf(i)
+	s := sp.Elem()
+	timestamp := reflect.ValueOf(time.Now())
+	s.FieldByName("CreatedAt").Set(timestamp)
+	s.FieldByName("UpdatedAt").Set(timestamp)
+
+	bc := sp.MethodByName("BeforeCreate")
+	ac := sp.MethodByName("AfterCreate")
 
 	table := d.convertToTableName(t.Elem().Name())
+
+	in := make([]reflect.Value, 1)
+	in[0] = reflect.ValueOf(d)
+	bc.Call(in)
+
 	res, err := r.Db(d.dbName).Table(table).Insert(i).RunWrite(d.sess)
 	if err != nil {
 		return err
 	}
-
 	s.FieldByName("Id").SetString(res.GeneratedKeys[0])
+
+	ac.Call(in)
 
 	return nil
 }
