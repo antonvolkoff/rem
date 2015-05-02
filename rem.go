@@ -40,8 +40,7 @@ func (d *DB) Insert(i interface{}) error {
 
 	table := d.convertToTableName(t.Elem().Name())
 
-	in := make([]reflect.Value, 1)
-	in[0] = reflect.ValueOf(d)
+	in := d.callbackArgs()
 	bc.Call(in)
 
 	res, err := r.Db(d.dbName).Table(table).Insert(i).RunWrite(d.sess)
@@ -86,8 +85,7 @@ func (d *DB) Update(i interface{}) error {
 
 	table := d.convertToTableName(t.Elem().Name())
 
-	in := make([]reflect.Value, 1)
-	in[0] = reflect.ValueOf(d)
+	in := d.callbackArgs()
 	bu.Call(in)
 
 	res, err := r.Db(d.dbName).Table(table).Get(id).Update(i).RunWrite(d.sess)
@@ -141,8 +139,7 @@ func (d *DB) Delete(i interface{}) error {
 	table := d.convertToTableName(t.Elem().Name())
 	bd := sp.MethodByName("BeforeDelete")
 	ad := sp.MethodByName("AfterDelete")
-	in := make([]reflect.Value, 1)
-	in[0] = reflect.ValueOf(d)
+	in := d.callbackArgs()
 
 	bd.Call(in)
 	res, err := r.Db(d.dbName).Table(table).Get(id).Delete().RunWrite(d.sess)
@@ -238,4 +235,10 @@ func (d *DB) convertToTableName(name string) string {
 	table := strings.ToLower(name)
 	table = inflector.Pluralize(table)
 	return table
+}
+
+func (d *DB) callbackArgs() []reflect.Value {
+	in := make([]reflect.Value, 1)
+	in[0] = reflect.ValueOf(d)
+	return in
 }

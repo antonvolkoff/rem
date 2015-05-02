@@ -18,7 +18,6 @@ type DBSuite struct {
 func (suite *DBSuite) SetupSuite() {
 	suite.sess, _ = r.Connect(r.ConnectOpts{
 		Address: "localhost:28015",
-		// Database: "rem_test",
 	})
 
 	r.DbCreate("rem_test").Run(suite.sess)
