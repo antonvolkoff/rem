@@ -135,10 +135,16 @@ func (d *DB) Delete(i interface{}) error {
 		return fmt.Errorf("Given document is new and can not be deleted")
 	}
 
-	s := reflect.ValueOf(i).Elem()
+	sp := reflect.ValueOf(i)
+	s := sp.Elem()
 	id := s.FieldByName("Id").String()
 	table := d.convertToTableName(t.Elem().Name())
+	bd := sp.MethodByName("BeforeDelete")
+	ad := sp.MethodByName("AfterDelete")
+	in := make([]reflect.Value, 1)
+	in[0] = reflect.ValueOf(d)
 
+	bd.Call(in)
 	res, err := r.Db(d.dbName).Table(table).Get(id).Delete().RunWrite(d.sess)
 	if err != nil {
 		return err
@@ -147,6 +153,7 @@ func (d *DB) Delete(i interface{}) error {
 	if res.Errors != 0 {
 		return fmt.Errorf("Document was not updated")
 	}
+	ad.Call(in)
 
 	return nil
 }
