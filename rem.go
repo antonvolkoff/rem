@@ -40,8 +40,10 @@ func (d *DB) Insert(i interface{}) error {
 
 	table := d.convertToTableName(t.Elem().Name())
 
-	in := d.callbackArgs()
-	bc.Call(in)
+	if bc.IsValid() {
+		in := d.callbackArgs()
+		bc.Call(in)
+	}
 
 	res, err := r.Db(d.dbName).Table(table).Insert(i).RunWrite(d.sess)
 	if err != nil {
@@ -49,7 +51,10 @@ func (d *DB) Insert(i interface{}) error {
 	}
 	s.FieldByName("Id").SetString(res.GeneratedKeys[0])
 
-	ac.Call(in)
+	if ac.IsValid() {
+		in := d.callbackArgs()
+		ac.Call(in)
+	}
 
 	return nil
 }
@@ -85,8 +90,10 @@ func (d *DB) Update(i interface{}) error {
 
 	table := d.convertToTableName(t.Elem().Name())
 
-	in := d.callbackArgs()
-	bu.Call(in)
+	if bu.IsValid() {
+		in := d.callbackArgs()
+		bu.Call(in)
+	}
 
 	res, err := r.Db(d.dbName).Table(table).Get(id).Update(i).RunWrite(d.sess)
 	if err != nil {
@@ -97,7 +104,10 @@ func (d *DB) Update(i interface{}) error {
 		return fmt.Errorf("Document was not updated")
 	}
 
-	au.Call(in)
+	if au.IsValid() {
+		in := d.callbackArgs()
+		au.Call(in)
+	}
 
 	return nil
 }
@@ -140,9 +150,12 @@ func (d *DB) Delete(i interface{}) error {
 	table := d.convertToTableName(t.Elem().Name())
 	bd := sp.MethodByName("BeforeDelete")
 	ad := sp.MethodByName("AfterDelete")
-	in := d.callbackArgs()
 
-	bd.Call(in)
+	if bd.IsValid() {
+		in := d.callbackArgs()
+		bd.Call(in)
+	}
+
 	res, err := r.Db(d.dbName).Table(table).Get(id).Delete().RunWrite(d.sess)
 	if err != nil {
 		return err
@@ -151,7 +164,11 @@ func (d *DB) Delete(i interface{}) error {
 	if res.Errors != 0 {
 		return fmt.Errorf("Document was not deleted")
 	}
-	ad.Call(in)
+
+	if ad.IsValid() {
+		in := d.callbackArgs()
+		ad.Call(in)
+	}
 
 	return nil
 }

@@ -22,6 +22,7 @@ func (suite *DBSuite) SetupSuite() {
 
 	r.DbCreate("rem_test").Run(suite.sess)
 	r.Db("rem_test").TableCreate("nodes").Run(suite.sess)
+	r.Db("rem_test").TableCreate("callables").Run(suite.sess)
 
 	suite.db = NewDB(suite.sess, "rem_test")
 }
@@ -56,32 +57,39 @@ type Node struct {
 	UpdatedAt time.Time `gorething:"updated_at"`
 }
 
-func (n *Node) BeforeCreate(db *DB) error {
+type Callable struct {
+	Id        string    `gorethink:"id,omitempty"`
+	Name      string    `gorethink:"name"`
+	CreatedAt time.Time `gorething:"created_at"`
+	UpdatedAt time.Time `gorething:"updated_at"`
+}
+
+func (n *Callable) BeforeCreate(db *DB) error {
 	beforeCreateCalled = true
 	return nil
 }
 
-func (n *Node) AfterCreate(db *DB) error {
+func (n *Callable) AfterCreate(db *DB) error {
 	afterCreateCalled = true
 	return nil
 }
 
-func (n *Node) BeforeUpdate(db *DB) error {
+func (n *Callable) BeforeUpdate(db *DB) error {
 	beforeUpdateCalled = true
 	return nil
 }
 
-func (n *Node) AfterUpdate(db *DB) error {
+func (n *Callable) AfterUpdate(db *DB) error {
 	afterUpdateCalled = true
 	return nil
 }
 
-func (n *Node) BeforeDelete(db *DB) error {
+func (n *Callable) BeforeDelete(db *DB) error {
 	beforeDeleteCalled = true
 	return nil
 }
 
-func (n *Node) AfterDelete(db *DB) error {
+func (n *Callable) AfterDelete(db *DB) error {
 	afterDeleteCalled = true
 	return nil
 }
@@ -261,7 +269,7 @@ func (suite *DBSuite) TestCallbacks() {
 	beforeDeleteCalled = false
 	afterDeleteCalled = false
 
-	node := &Node{Name: "root"}
+	node := &Callable{Name: "root"}
 
 	suite.db.Insert(node)
 	suite.True(beforeCreateCalled)
