@@ -104,6 +104,7 @@ func (d *DB) Update(i interface{}) error {
 
 func (d *DB) Find(i interface{}, term r.Term) error {
 	res, err := term.Run(d.sess)
+	defer res.Close()
 	if err != nil {
 		return err
 	}
